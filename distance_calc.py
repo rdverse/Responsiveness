@@ -1,11 +1,11 @@
 import re
+
 import pandas as pd
 import numpy as np
+#import ast
 import os
 import glob
 import tqdm
-
-######################################3
 
 COCO_KEYPOINT_INDEXES = {
     0: 'nose',
@@ -27,83 +27,62 @@ COCO_KEYPOINT_INDEXES = {
     16: 'right_ankle'
 }
 
-path = 'chrisPP/'
-save_file_name = 'saved_values.csv'
-save_distance = 'saved_distances.csv'
-
-############################################
-#Utils for calculations
-
-
-def add_comma(match):
-    return match.group(0) + ','
-
 
 def get_euclidean(col_name, col_x, col_y, frames):
     dist = 0
+    #print(frames)
     frameDenominator = 0
 
-    for i in range(len(col_x)):
-        #print(frames)
-        if i > 0:
-
-            if frames[i] - frames[i - 1] == 1:
+    for e, i in enumerate(range(len(col_x))):
+        if e > 0:
+            if frames[e] - frames[e - 1] == 1:
                 try:
                     dist = dist + np.sqrt((col_x[i] - col_x[i - 1])**2 +
                                           ((col_y[i] - col_y[i - 1])**2))
                     frameDenominator += 1
                 except:
                     pass
+    try:
 
-    dist = dist / frameDenominator
-    return (dist, frameDenominator)
-
-
-#Divide by maximum value
-def normalize(save_value):
-    for col in save_value.columns:
-        #for val in save_value[col]:
-        print('{} , {}'.format(col, np.max(save_value[col])))
-        save_value[col] = save_value[col].astype(float)
-        save_value[col] = save_value[col] / np.max(save_value[col])
-    return save_value
+        dist = dist / frameDenominator
+    except:
+        dist = 0
+    return dist
 
 
-########################################
-
-#Change path and create folder
+path = 'chrisPP/'
+save_file_name = 'saved_values.csv'
+save_distance = 'saved_distances.csv'
 os.chdir(path)
 
-if os.path.isfile(save_file_name):
+if os.path.isfile(os.path.join(path, save_file_name)):
     os.remove(save_file_name)
-
-if os.path.isfile(save_distance):
-    os.remove(save_distance)
-######################################
 
 print('Generating file and calculating distance of each keypoint')
 save_value = pd.DataFrame(columns=['personID', 'keypoint', 'distance'])
 
-allDist = list()
 
-dataFiles = glob.glob("*.csv")
-dataFiles.sort()
+def add_comma(match):
+    return match.group(0) + ','
 
-for person in dataFiles:
 
+for person in glob.glob("*.csv"):
     print('Person : %d' % int(person[0]))
-    df = pd.read_csv(person)
-    df.sort_values(by='frame', inplace=True)
+    df = pd.read_csv(person)  #[2:]
+
     col_nos = list(range(17))
     col_mod = [[str(col) + '_x', str(col) + '_y'] for col in col_nos]
     col_mod = np.array(col_mod).flatten()
-    calc_df = pd.DataFrame(columns=col_mod)
 
+    calc_df = pd.DataFrame(columns=col_mod)
     #Store the frame numbers in this
+
     frames = list(df.frame)
-    frames = [int(frame) for frame in frames]
+
+    frames = [frame / 28 for frame in frames]
 
     for _, row in tqdm.tqdm(df.iterrows()):
+        # print((row[1]))
 
         pp = row['pose_preds']
 
@@ -119,43 +98,58 @@ for person in dataFiles:
 
         calc_df.loc[len(calc_df)] = pp
         #Total frames detected
+        #print(calc_df.head())
 
-    allDistancesMeasured = list()
-    col_nos.sort()
     for col in col_nos:
-        distance, distancesMeasured = get_euclidean(0,
-                                                    calc_df[str(col) + '_x'],
-                                                    calc_df[str(col) + '_y'],
-                                                    frames)
+        distance = get_euclidean(0, frames, calc_df[str(col) + '_x'],
+                                 calc_df[str(col) + '_y'])
 
         save_value.loc[len(save_value)] = np.array([person[0], col, distance])
+#    frameCount = len(df)
 
-    allDistancesMeasured.append(distancesMeasured)
-    allDist.append(max(allDistancesMeasured))
+#    pID = person.split('.')[0]
+#   save_value['distance'] = [float(i) for i in save_value['distance']]
+#  save_value.distance.loc[
+#     save_value['personID'] ==
+#    pID] = save_value.distance[save_value['personID'] == pID] / frameCount
+
+#print(save_value)
 
 #save values file
 save_value.to_csv(save_file_name, sep=',', encoding='utf-8')
 
-#Reahaping the saved values file
 save_value = save_value.pivot(index='personID',
                               columns='keypoint',
                               values='distance')
 
-columns = [str(c) for c in range(17)]
-save_value = save_value[columns]
-print(save_value.columns)
-print(save_value.head())
+for col in save_value.columns:
+    try:
+        ch = "".join(KEYPOINT_INDEXES[col].split("_"))
+    except:
+        pass
+    try:
+        save_value.rename(columns={col: ch}, inplace=True)
+    except:
+        pass
+
+
+#Divide by maximum value
+def normalize(save_value):
+    for col in save_value.columns:
+        #for val in save_value[col]:
+        print('{} , {}'.format(col, np.max(save_value[col])))
+        save_value[col] = save_value[col].astype(float)
+        save_value[col] = save_value[col] / np.max(save_value[col])
+    return save_value
+
+
 frameCount = list()
+#print(save_value.head())
 
 #Loop to add the frame counts as a new column
 for pID in save_value.index:
     frameCount.append(len(pd.read_csv(str(pID) + '.csv')))
-
-for col in save_value.columns:
-    ch = " ".join(COCO_KEYPOINT_INDEXES[int(col)].split("_"))
-    save_value.rename(columns={col: ch}, inplace=True)
-
 #Save distances file
 save_value['frameCount'] = frameCount
-save_value['Distances Measured'] = allDist
+
 save_value.to_csv(save_distance, sep=',', encoding='utf-8')
