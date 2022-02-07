@@ -51,11 +51,12 @@ for image in tqdm.tqdm(images):
     img = cv2.imread(image)
     feature = extractor(img)
     features.append(list(feature.detach().cpu().numpy())[0])
-print(features)
+#print(features)
 print('Training the model')
 # Run kmeans clustering algorithm
-print(np.array(features).shape)
-model = KMeans(n_clusters=8, max_iter=3000, n_jobs=-1, verbose=1).fit(features)
+#print(np.array(features).shape)
+model = KMeans(n_clusters=10, max_iter=5000, n_jobs=-1,
+               verbose=1).fit(features)
 
 # Reassign labels for all images after training the model
 predLabels = model.labels_
@@ -71,4 +72,4 @@ for image, label in list(zip(images, predLabels)):
     newPATH = os.path.join(newPATH, imageName)
     shutil.copy(image, newPATH)
 
-#shutil.rmtree(groupPATH, ignore_errors=True)
+shutil.rmtree(groupPATH, ignore_errors=True)

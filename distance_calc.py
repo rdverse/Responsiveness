@@ -67,7 +67,8 @@ def add_comma(match):
 
 
 for person in glob.glob("*.csv"):
-    print('Person : %d' % int(person[0]))
+    personID = int(person.split('.')[0])
+    print('Person : %d' % int(personID))
     df = pd.read_csv(person)  #[2:]
 
     col_nos = list(range(17))
@@ -104,7 +105,8 @@ for person in glob.glob("*.csv"):
         distance = get_euclidean(0, frames, calc_df[str(col) + '_x'],
                                  calc_df[str(col) + '_y'])
 
-        save_value.loc[len(save_value)] = np.array([person[0], col, distance])
+        save_value.loc[len(save_value)] = np.array(
+            [str(personID), col, distance])
 #    frameCount = len(df)
 
 #    pID = person.split('.')[0]

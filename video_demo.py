@@ -19,6 +19,10 @@ MODEL_DIR = os.path.join(ROOT_DIR, "mylogs")
 # Local path to trained weights file
 COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco_humanpose.h5")
 
+#import tensorflow as tf
+#physical_devices = tf.config.enxperimental.list_phyiscal_device('GPU')
+#tf.config.experimental.set_memory_growth(physical_devices[0], True)
+
 
 class InferenceConfig(coco.CocoConfig):
     GPU_COUNT = 1
@@ -146,7 +150,7 @@ args = get_argparser().parse_args()
 if args.initialize:
     multiplier = 5
 else:
-    multiplier = 1
+    multiplier = 0.5
 
 vidFile = os.path.join('box_data', args.video_input)
 
@@ -179,12 +183,12 @@ while (cap.isOpened()):
             results = model.detect_keypoint([frame], verbose=0)
             r = results[0]
             # for one image
-            log("rois", r['rois'])
-            log("keypoints", r['keypoints'])
-            log("class_ids", r['class_ids'])
-            log("keypoints", r['keypoints'])
-            log("masks", r['masks'])
-            log("scores", r['scores'])
+        # log("rois", r['rois'])
+        # log("keypoints", r['keypoints'])
+        #log("class_ids", r['class_ids'])
+        #log("keypoints", r['keypoints'])
+        #log("masks", r['masks'])
+        #log("scores", r['scores'])
 
             imgList = list()
             #Go through the masked images and save them in a folder

@@ -38,6 +38,7 @@ class compareData():
         # Hardcoded output directory
         self.mainPath = 'chrisPP'
         self.mainedPath = 'ds/chrisPP'
+        #self.mainedPath = os.path.join('Results/{}/ds/'.format(video_name)
 
         features = list()
         # Go over comparision images
@@ -184,6 +185,7 @@ class DetectionSetupMode(compareData):
                         os.listdir(imgFoldPath)) > 3:
                     #print(imgPath)
                     df = pd.read_csv(csvPath, index_col=0)
+                    #print(df)
                     if df.iloc[-1]['score'] > bestScore:
                         continue
                     else:

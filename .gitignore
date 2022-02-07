@@ -1,0 +1,9 @@
+__pycache__
+*.MTS
+*.avi
+ds*
+chrisPP*
+humanpose.h5
+Results
+Results1
+human2.avi
