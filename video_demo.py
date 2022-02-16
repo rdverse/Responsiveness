@@ -162,7 +162,7 @@ codec = cv2.VideoWriter_fourcc(*'DIVX')
 fps = int(cap.get(cv2.CAP_PROP_FPS))
 groupPATH = 'groupPATH'
 
-output = cv2.VideoWriter('human2.avi', codec, int(fps / multiplier), size)
+output = cv2.VideoWriter('human2.avi', codec, int(1 / multiplier), size)
 
 if not os.path.isdir(groupPATH):
     os.mkdir(groupPATH)

@@ -87,32 +87,8 @@ def get_euclidean(personID, frames,keypointNo, col_x, col_y):
             if frames[pos] - frames[pos - 1] == 1:
                 
                 try:
-                    ## check if the image changed at the point of previous keypoint
-                    video_path = "../box_data/test3.MTS"
-
-                    # read the video at this frame
-                    cap = cv2.VideoCapture(video_path)
-                    # crop the image for a nxn matrix at previous keypoint
-                    cap.set(1,frames[pos-1]) # 
-                    ret, framePrev = cap.read()
-                    cap.set(1,frames[pos])
-                    ret, frameCurr = cap.read() 
-                    cap.release()
-                    cv2.destroyAllWindows()
-                    framePrev = framePrev[ col_y[pos - 1]-25:col_y[pos - 1]+25, col_x[pos - 1]-25:col_x[pos - 1]+25]
-                    frameCurr = frameCurr[ col_y[pos]-25:col_y[pos]+25, col_x[pos]-25:col_x[pos]+25]
-
-                    comparePrev = cv2.cvtColor(framePrev, cv2.COLOR_BGR2GRAY)
-                    compareCurr = cv2.cvtColor(frameCurr, cv2.COLOR_BGR2GRAY)
-
-                    ssim = compare_ssim(compareCurr,comparePrev, full=True)
-                    
-                    # If there is no change in image, distance is zero
-
-                    if ssim==1.0:
-                        curDist=0
-                    else:        
-                        curDist = np.sqrt((col_x[pos] - col_x[pos - 1])**2 +
+               
+                    curDist = np.sqrt((col_x[pos] - col_x[pos - 1])**2 +
                                           ((col_y[pos] - col_y[pos - 1])**2))
                     dist = dist + curDist
 
@@ -124,7 +100,6 @@ def get_euclidean(personID, frames,keypointNo, col_x, col_y):
                 except:
                     distances.append(-3)
                     distances_r.append( distances_r[-1] if len(distances_r)>0 else 0)
-                    print("Error caused at ssim")
                     pass
             else:
                 distances.append(-2)
