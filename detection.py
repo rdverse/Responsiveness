@@ -90,8 +90,8 @@ class compareData():
 '''
 
     def get_feature(self, image):
-        print("extractor image")
-        print(image.shape)
+        #print("extractor image")
+        #print(image.shape)
         return (self.extractor(image))
 
     '''

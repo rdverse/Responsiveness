@@ -186,15 +186,15 @@ while (cap.isOpened()):
                 image_name = os.path.join(
                     groupPATH,
                     str(no) + '_' + str(cnt) + '.jpg')
-                print("BOX")
-                print(box)
+                # print("BOX")
+                # print(box)
                 Y1, X1, Y2, X2 = tuple(box)
                 Y1, X1, Y2, X2 = Y1*frameHeight, X1*frameWidth, Y2*frameHeight, X2*frameWidth
                 frame_copy = frame.copy()
-                print("Frame copy shape {}".format(frame_copy.shape))
+                #print("Frame copy shape {}".format(frame_copy.shape))
                 frame_copy = frame_copy[math.floor(Y1):math.ceil(Y2),
                                         math.floor(X1):math.ceil(X2)]
-                print("Frame copy shape after processing {}".format(frame_copy.shape))
+                #print("Frame copy shape after processing {}".format(frame_copy.shape))
                 imgList.append(frame_copy)
                 if args.initialize:
                     cv2.imwrite(image_name, frame_copy)
