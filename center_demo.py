@@ -45,7 +45,7 @@ COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco_humanpose.h5")
 os.environ['TFHUB_CACHE_DIR'] = 'cache'
 
 # load tensorflow hub model
-model_handle = 'CenterNet HourGlass104 Keypoints 512x512'
+# model_handle = 'CenterNet HourGlass104 Keypoints 512x512'
 model_handle = 'CenterNet HourGlass104 Keypoints 1024x1024'
 
 print('loading model...')
@@ -109,7 +109,7 @@ def get_detections(image_np):
         result['detection_scores'][0],
         category_index,
         use_normalized_coordinates=True,
-        max_boxes_to_draw=200,
+        max_boxes_to_draw=20,
         min_score_thresh=.30,
         agnostic_mode=False,
         keypoints=keypoints,
@@ -122,9 +122,9 @@ def get_detections(image_np):
 args = get_argparser().parse_args()
 
 if args.initialize:
-    multiplier = 5
+    multiplier = 1
 else:
-    multiplier = 0.5
+    multiplier = 1
 
 groupPATH = 'groupPATH'
 #Directory setup
@@ -141,7 +141,13 @@ frameHeight = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 size = (frameWidth, frameHeight)
 codec = cv2.VideoWriter_fourcc(*'DIVX')
 fps = int(cap.get(cv2.CAP_PROP_FPS))
+
 frame_rate_divider = int(fps * multiplier)
+
+# change these two to alter the fps of read and write
+frame_rate_divider=1 # 1  fps
+multiplier = 1/fps #1/fps 1
+
 output = cv2.VideoWriter('huma.avi', codec, int(1 / multiplier), size)
 
 # read the video
@@ -149,13 +155,13 @@ output = cv2.VideoWriter('huma.avi', codec, int(1 / multiplier), size)
 while (cap.isOpened()):
     stime = time.time()
 
-    try:
-        ret, frame = cap.read()
-        image_np = np.array([frame.copy()])
-        print("image_Np shape")
-        print(image_np.shape)
-    except:
-        continue
+    #try:
+    ret, frame = cap.read()
+    image_np = np.array([frame.copy()])
+        # print("image_Np shape")
+        # print(image_np.shape)
+    #except:
+    #    continue
 
     if ret:
         if cnt % frame_rate_divider == 0:
@@ -169,7 +175,8 @@ while (cap.isOpened()):
 
             results_copy = results.copy()
             keepIndices = [i for i,score in enumerate(results['scores']) if score>0.3]
-
+            
+            #filter results that have a low threshold/confidence in prediction
             for key, val in results.items():
                 if key!='num_detections':
                     results[key]=list(np.array(results[key])[keepIndices])
@@ -186,19 +193,14 @@ while (cap.isOpened()):
                 image_name = os.path.join(
                     groupPATH,
                     str(no) + '_' + str(cnt) + '.jpg')
+
+                # normalize the keypoints as well
+                results['keypoints'][no] = [[pk[0]*frameWidth, pk[1]*frameHeight] for pk in results['keypoints'][no]]
+                
                 # print("BOX")
                 # print(box)
+                # multiply the box coordinates with frame width and height
                 Y1, X1, Y2, X2 = tuple(box)
-                Y1, X1, Y2, X2 = Y1*frameHeight, X1*frameWidth, Y2*frameHeight, X2*frameWidth
-                frame_copy = frame.copy()
-                #print("Frame copy shape {}".format(frame_copy.shape))
-                frame_copy = frame_copy[math.floor(Y1):math.ceil(Y2),
-                                        math.floor(X1):math.ceil(X2)]
-                #print("Frame copy shape after processing {}".format(frame_copy.shape))
-                imgList.append(frame_copy)
-                if args.initialize:
-                    cv2.imwrite(image_name, frame_copy)
-
             results['images'] = imgList
 
             if not args.initialize:
