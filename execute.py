@@ -1,0 +1,8 @@
+import os
+
+if __name__=='__main__':
+
+    # os.system('python center_demo.py --initialize False --video_input test4.mp4 --video_output True')
+    os.system('python center_demo.py --initialize False --video_input Self/DT_4_10.MOV --video_output True')
+    os.system('python distance_calcNoSSIM.py')
+    os.system('python sortDistances.py')

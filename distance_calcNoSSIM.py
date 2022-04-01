@@ -10,8 +10,7 @@ import matplotlib.pyplot as plt
 
 import cv2
 import cv2
-from skimage.measure import compare_ssim
-
+# from skimage.measure import compare_ssim
 
 
 COCO_KEYPOINT_INDEXES = {
@@ -36,7 +35,7 @@ COCO_KEYPOINT_INDEXES = {
 
 
 MAX_FRAMES = 0 
-FRAME_DIVIDER = 14
+FRAME_DIVIDER = 1
 DISTANCES_TRACK = pd.DataFrame()
 
 def set_max_frames():
@@ -65,7 +64,6 @@ def normalize(save_value):
         save_value[col] = save_value[col] / np.max(save_value[col])
     return save_value
 
-
 # def _plot_presence(distances,personID, col_x):
 #     if not os.path.isdir('../keypointPlots'):
 #         os.mkdir('../keypointPlots')
@@ -76,12 +74,13 @@ def get_euclidean(personID, frames,keypointNo, col_x, col_y):
     dist = 0
     #print(frames)
     frameDenominator = 0
+    # resultant distances 
     distances = list()
     distances_r = list()
 
 
     for frame in range(1, MAX_FRAMES+1):
-        
+        #print(frames)
         if frame in frames:
             pos = frames.index(frame)
             if frames[pos] - frames[pos - 1] == 1:
@@ -156,15 +155,20 @@ if __name__=='__main__':
             # print((row[1]))
 
             pp = row['pose_preds']
+            # print("pp is here")
+            if pp==0 or pp=='0':
+                continue
 
-            pp = re.sub(r'\[[0-9\.\s]+\]', add_comma, pp)
-            pp = re.sub(r'([0-9\.]+)', add_comma, pp)
             pp = eval(pp)
+
+            # pp = re.sub(r'\[[0-9\.\s]+\]', add_comma, pp)
+            # pp = re.sub(r'([0-9\.]+)', add_comma, pp)
+            # pp = eval(pp)
 
             #np.array([ast.literal_eval(p) for p in ast.literal_eval(pp)]).flatten()
             pp = np.array(pp)
 
-            pp = np.take(pp, [0, 1], axis=1)
+            #pp = np.take(pp, [0, 1], axis=1)
             pp = pp.flatten()
 
             calc_df.loc[len(calc_df)] = pp
@@ -211,7 +215,6 @@ if __name__=='__main__':
     save_value.to_csv(save_distance, sep=',', encoding='utf-8')
     
     DISTANCES_TRACK.to_csv("distances_track.csv")   
-
 
     #    frameCount = len(df)
 
