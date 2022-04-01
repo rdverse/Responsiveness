@@ -167,6 +167,7 @@ class DetectionSetupMode(compareData):
         self.mainedPath = 'ds/chrisPP'
 
     def classifyDetections(self, data, cnt):
+        # data is results here from center_demo or the other demo
         self.cnt = cnt
         for personID, item in enumerate(data['images']):
             # First initialize this and then figure out the three unknowns
@@ -201,8 +202,8 @@ class DetectionSetupMode(compareData):
                 # Log results in a csv file
                 el1 = bestMatch
                 el2 = self.cnt
-                el3 = person.featureVector
-                el4 = person.keypoints
+                el3 = np.round(person.featureVector,3).tolist()
+                el4 = np.round(person.keypoints,3).tolist()
                 el5 = bestScore
                 csvRow = [el1, el2, el3, el4, el5]
                 with open(csvPath, 'a', newline='') as csvFile:
@@ -246,7 +247,7 @@ class DetectionSetupMode(compareData):
         bestScore = scoreList[bestIndex]
         bestMatch = compareList[bestIndex]
 
-        if bestScore > 0.15:
+        if bestScore > 0.55:
             return (bestMatch, bestScore)
 
         else:
