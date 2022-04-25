@@ -36,14 +36,14 @@ COCO_KEYPOINT_INDEXES = {
 
 
 MAX_FRAMES = 0 
-FRAME_DIVIDER = 14
+FRAME_DIVIDER = 1
 DISTANCES_TRACK = pd.DataFrame()
 
 def set_max_frames():
+    folders = os.listdir() 
     allFileIndices = list()
     for root, dirs, files in os.walk('.'):
         print(root)
-        print(files)
         try:
             files = [int(f.strip('.jpg')) for f in files]
             allFileIndices.extend(files)
@@ -71,65 +71,23 @@ def normalize(save_value):
 #     plt.plot(distances)
 #     plt.show()
 
-def get_euclidean(personID, frames,keypointNo, col_x, col_y):
-    dist = 0
-    #print(frames)
-    frameDenominator = 0
-    # resultant distances 
-    distances = list()
-    distances_r = list()
+def calc_dist(xa, ya, xb, yb):
+    dist = np.sqrt((xa - xb)**2 + ((ya - yb)**2))
+    return dist 
+
+def distance_between(frames, handData):
+    comb = [[],[]]
+    for comb in combinations:
+        [[xa,ya],[xb,yb]] = comb
+        distBetween = calc_dist(xa,ya,xb,yb)
+        distBetween+=distBetween
+    # return deg2 - deg1 if deg1 <= deg2 else 360 - (deg1 - deg2)
+    return distLs, distRs, nframes
 
 
-    for frame in range(1, MAX_FRAMES+1):
-        #print(frames)
-        if frame in frames:
-            pos = frames.index(frame)
-            if frames[pos] - frames[pos - 1] == 1:
-                
-                try:
-               
-                    curDist = np.sqrt((col_x[pos] - col_x[pos - 1])**2 +
-                                          ((col_y[pos] - col_y[pos - 1])**2))
-                    dist = dist + curDist
-
-                    frameDenominator += 1
-                    distances_r.append(dist/frameDenominator)
-                    distances.append(curDist)
-
-
-                except:
-                    distances.append(-3)
-                    distances_r.append( distances_r[-1] if len(distances_r)>0 else 0)
-                    pass
-            else:
-                distances.append(-2)
-                distances_r.append( distances_r[-1] if len(distances_r)>0 else 0)
-                
-        else:
-
-            distances.append(-1)
-            distances_r.append(distances_r[-1] if len(distances_r)>0 else 0)
-                
-    try:
-
-        dist = dist / frameDenominator
-    except:
-        dist = 0
-
-    DISTANCES_TRACK[str(personID) + '_' + keypointNo] = distances
-    DISTANCES_TRACK[str(personID) + '_' + keypointNo + '_'+ 'r'] = distances_r
-
-    return dist
-
-
-
-
-
+# def distance_between(handDistance, pos):
 def angle_between(handAngle,pos):
 
-    # x1, y1 = p1
-    # x2, y2 = p2
-    # x3, y3 = p3
     x1, x2, x3 = handAngle["x"].iloc[pos].values.T*1920
     y1, y2, y3 = handAngle["y"].iloc[pos].values.T*1080
 
@@ -137,7 +95,8 @@ def angle_between(handAngle,pos):
     deg2 = (360 + degrees(atan2(x3 - x2, y3 - y2))) % 360
     return deg2 - deg1 if deg1 <= deg2 else 360 - (deg1 - deg2)
 
-def get_angle(personID, frames, handData):
+
+def get_measures(frames, handData):
     dist = 0
     #print(frames)
     nframes = 0
@@ -145,25 +104,51 @@ def get_angle(personID, frames, handData):
     deltaTheta = list()
     # colHand_x, colHand_y
     curThetaL, curThetaR, prevThetaL, prevThetaR, = np.zeros(4)
+    curDistL, curDistR, prevDistL, prevDistR, = np.zeros(4)
+    
     deltaThetaLs,deltaThetaRs = list(),list()
+    deltaDistLs,deltaDistRs = list(),list()
+
     print(MAX_FRAMES)
     for frame in range(1, MAX_FRAMES+1):
         #print(frames)
         if frame in frames:
             pos = frames.index(frame) 
             if frames[pos] - frames[pos - 1] == 1:
+                
+                ## Angles
                 curThetaL = angle_between(handData["left"],pos-1)
                 curThetaR = angle_between(handData["right"],pos-1)
+
                 deltaThetaLs.append(abs(prevThetaL - curThetaL))
                 deltaThetaRs.append(abs(prevThetaR - curThetaR))
+                
                 prevThetaL = curThetaL
                 prevThetaR = curThetaR
+                
+                # Distances
+                curDistL = distance_between(handData["left"],pos-1)
+                curDistR = distance_between(handData["right"],pos-1)
+
+                deltaDistLs.append(abs(prevDistL - curDistL))
+                deltaDistRs.append(abs(prevDistR - curDistR))
+                
+                prevDistL = curDistL
+                prevDistR = curDistR
+                
                 nframes += 1
     
-    return np.array(deltaThetaRs), np.array(deltaThetaRs), nframes
-
+    return np.array(deltaThetaLs), np.array(deltaThetaRs),\
+        np.array(deltaDistLs), np.array(deltaDistRs), nframes
 
 if __name__=='__main__':
+
+    try:
+        os.mkdir("angles")
+    except:
+        print("Angles folder is already present")
+        pass
+
     path = 'chrisPP/'
     save_file_name = 'saved_values.csv'
     save_distance = 'saved_distances.csv'
@@ -179,13 +164,7 @@ if __name__=='__main__':
     personAngles = {"personID":[], "thetaL":[], "thetaR":[]}
     for person in glob.glob("*.csv"):
         personID = int(person.strip(".csv"))
-    #    frameCount = len(df)
-    #    pID = person.split('.')[0]
-    #   save_value['distance'] = [float(i) for i in save_value['distance']]
-    #  save_value.distance.loc[
-    #     save_value['personID'] ==
-    #    pID] = save_value.distance[save_value['personID'] == pID] / frameCount
-    #print(save_value)(person.split('.')[0])
+
         print(personID)
         print('Person : %d' % int(personID))
         df = pd.read_csv(person)  #[2:]
@@ -196,33 +175,20 @@ if __name__=='__main__':
 
         calc_df = pd.DataFrame(columns=col_mod)
         #Store the frame numbers in this
-
         frames = list(df.frame)
-
         frames = [frame / FRAME_DIVIDER for frame in frames]
-
         for _, row in tqdm.tqdm(df.iterrows()):        
             # print((row[1]))
-
             pp = row['pose_preds']
             # print("pp is here")
             if pp==0 or pp=='0':
                 continue
-
             pp = eval(pp)
-
             pp = np.array(pp)
-
+            # print(pp.shape)
+            pp = np.take(pp, [0,1], axis=1)
             pp = pp.flatten()
-
             calc_df.loc[len(calc_df)] = pp
-            #Total frames detected
-            #print(calc_df.head())
-
-        # iterate over each column number and calculate distance one column at a time
-        # for col in col_nos:                 
-            # save_value.loc[len(save_value)] = np.array(
-            #     [str(personID), col, distance])
 
         handColsLeft = [5,7,9]
         handColsRight = [6,8,10]
@@ -237,54 +203,28 @@ if __name__=='__main__':
             "y":calc_df[[str(col) + '_y' for col in handColsRight]]}
         }
 
-        angleLs,angleRs, nframes = get_angle(personID, frames, handData)
+        # angleLs,angleRs, nframes = get_angle(frames, handData)
+        # distLs, distRs, nframes = get_euclidean(frames, handData)
+        print(frames)
+        angleLs,angleRs, distLs, distRs, nframes = get_measures(frames, handData)
+
+
         # print(angleL,angleR)
         personAngles["personID"].append(personID)
         personAngles["thetaL"].append(np.sum(angleLs)/nframes)
         personAngles["thetaR"].append(np.sum(angleRs)/nframes)
-        
-        try:
-            os.mkdir("angles")
-        except:
-            pass
+        personAngles["theta"] = list(np.array(personAngles["thetaR"]) + np.array(personAngles["thetaL"])) 
 
-        pd.DataFrame(np.hstack((angleLs.reshape(-1,1),angleRs.reshape(-1,1))),
-                                columns=["thetaL", "thetaR"]).to_csv(
+
+        if not os.path.isdir('angles'):
+            os.mkdir('angles')
+
+        pd.DataFrame(np.hstack((angleLs.reshape(-1,1),
+                                angleRs.reshape(-1,1),
+                                angleRs.reshape(-1,1) + angleLs.reshape(-1,1),
+                                )),
+                                columns=["thetaL", "thetaR", "theta"]).to_csv(
                                     "angles/" + str(personID) + 'a' + '.csv')
 
-        # save_value.loc[len(save_value)] = np.array(
-        #     [str(personID), col, distance])
-        
+# .detach().cpu().numpy()
     pd.DataFrame.from_dict(personAngles).to_csv("angles/personAngles.csv")
-    #save values file
-    save_value.to_csv(save_file_name, sep=',', encoding='utf-8')
-
-    save_value = save_value.pivot(index='personID',
-                                columns='keypoint',
-                                values='distance')
-
-    for col in save_value.columns:
-        try:
-            ch = "".join(COCO_KEYPOINT_INDEXES[col].split("_"))
-        except:
-            pass
-        try:
-            save_value.rename(columns={col: ch}, inplace=True)
-        except:
-            pass
-
-    frameCount = list()
-    #print(save_value.head())
-
-    #Loop to add the frame counts as a new column
-    for pID in save_value.index:
-        frameCount.append(len(pd.read_csv(str(pID) + '.csv')))
-    #Save distances file
-    save_value['frameCount'] = frameCount
-
-    COCO_KEYPOINT_INDEXES = {str(k):v for k,v in COCO_KEYPOINT_INDEXES.items()}
-    save_value.rename(columns = { c: COCO_KEYPOINT_INDEXES[c] for c in save_value.columns if c in COCO_KEYPOINT_INDEXES.keys()}, inplace = True)
-
-    save_value.to_csv(save_distance, sep=',', encoding='utf-8')
-    
-    DISTANCES_TRACK.to_csv("distances_track.csv")   
