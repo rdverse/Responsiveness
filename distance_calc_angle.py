@@ -9,7 +9,6 @@ import tqdm
 import matplotlib.pyplot as plt
 
 import cv2
-import cv2
 # from skimage.measure import compare_ssim
 from math import atan2, degrees
 
@@ -38,6 +37,10 @@ COCO_KEYPOINT_INDEXES = {
 MAX_FRAMES = 0 
 FRAME_DIVIDER = 1
 DISTANCES_TRACK = pd.DataFrame()
+
+handColsLeft = [5,7,9]
+handColsRight = [6,8,10]
+
 
 def set_max_frames():
     folders = os.listdir() 
@@ -75,14 +78,22 @@ def calc_dist(xa, ya, xb, yb):
     dist = np.sqrt((xa - xb)**2 + ((ya - yb)**2))
     return dist 
 
-def distance_between(frames, handData):
-    comb = [[],[]]
-    for comb in combinations:
-        [[xa,ya],[xb,yb]] = comb
-        distBetween = calc_dist(xa,ya,xb,yb)
-        distBetween+=distBetween
-    # return deg2 - deg1 if deg1 <= deg2 else 360 - (deg1 - deg2)
-    return distLs, distRs, nframes
+def distance_between(handData,pos):
+    #Initialize dist ls and dist rs lists
+    dists = {
+        "left":[],
+        "right":[]
+    }
+    combinations={"left":[handColsLeft[:2],handColsLeft[1:]], 
+                "right":[handColsRight[:2],handColsRight[1:]]}
+    for key,val in combinations.items():
+        for limbIndex in val:
+            xa,xb = handData[key]["x"][[str(no) + '_x' for no in limbIndex]].iloc[pos].values
+            ya,yb = handData[key]["y"][[str(no) + '_y' for no in limbIndex]].iloc[pos].values
+            distBetween = calc_dist(xa,ya,xb,yb)
+            dists[key].append(distBetween)
+    print(dists)
+    return dists["left"], dists["right"]
 
 
 # def distance_between(handDistance, pos):
@@ -104,7 +115,7 @@ def get_measures(frames, handData):
     deltaTheta = list()
     # colHand_x, colHand_y
     curThetaL, curThetaR, prevThetaL, prevThetaR, = np.zeros(4)
-    curDistL, curDistR, prevDistL, prevDistR, = np.zeros(4)
+    curDistL, curDistR, prevDistL, prevDistR, = [0,0],[0,0],[0,0],[0,0]
     
     deltaThetaLs,deltaThetaRs = list(),list()
     deltaDistLs,deltaDistRs = list(),list()
@@ -127,11 +138,12 @@ def get_measures(frames, handData):
                 prevThetaR = curThetaR
                 
                 # Distances
-                curDistL = distance_between(handData["left"],pos-1)
-                curDistR = distance_between(handData["right"],pos-1)
-
-                deltaDistLs.append(abs(prevDistL - curDistL))
-                deltaDistRs.append(abs(prevDistR - curDistR))
+                curDistL,curDistR = distance_between(handData,pos-1)
+                
+                deltaDistLs.append(abs(prevDistL[0] - curDistL[0])
+                                    + abs(prevDistL[1] - curDistL[1]))
+                deltaDistRs.append(abs(prevDistR[0] - curDistR[0]) + 
+                                    abs(prevDistR[1] - curDistR[1]))
                 
                 prevDistL = curDistL
                 prevDistR = curDistR
@@ -161,7 +173,9 @@ if __name__=='__main__':
     print('Generating file and calculating distance of each keypoint')
     save_value = pd.DataFrame(columns=['personID', 'keypoint', 'distance'])
 
-    personAngles = {"personID":[], "thetaL":[], "thetaR":[]}
+    personAngles = {"personID":[], "thetaL":[], "thetaR":[], "theta":[],
+                    "distL":[],"distR":[],"dist":[]}
+
     for person in glob.glob("*.csv"):
         personID = int(person.strip(".csv"))
 
@@ -190,8 +204,6 @@ if __name__=='__main__':
             pp = pp.flatten()
             calc_df.loc[len(calc_df)] = pp
 
-        handColsLeft = [5,7,9]
-        handColsRight = [6,8,10]
 
         handData = {"left" : {
             "x" : calc_df[ [str(col) + '_x' for col in handColsLeft]],
@@ -208,14 +220,15 @@ if __name__=='__main__':
         print(frames)
         angleLs,angleRs, distLs, distRs, nframes = get_measures(frames, handData)
 
-
         # print(angleL,angleR)
         personAngles["personID"].append(personID)
         personAngles["thetaL"].append(np.sum(angleLs)/nframes)
         personAngles["thetaR"].append(np.sum(angleRs)/nframes)
         personAngles["theta"] = list(np.array(personAngles["thetaR"]) + np.array(personAngles["thetaL"])) 
-
-
+        personAngles["distL"].append(np.sum(distLs)/nframes)
+        personAngles["distR"].append(np.sum(distRs)/nframes)
+        personAngles["dist"] = list(np.array(personAngles["distR"]) + np.array(personAngles["distL"])) 
+        
         if not os.path.isdir('angles'):
             os.mkdir('angles')
 
