@@ -34,14 +34,27 @@ COCO_KEYPOINT_INDEXES = {
     16: 'right_ankle'
 }
 
+COCO_KEYPOINT_NAMES =  {v: k for k, v in COCO_KEYPOINT_INDEXES.items()}
+CKN = COCO_KEYPOINT_NAMES
 
 MAX_FRAMES = 0 
 FRAME_DIVIDER = 1
 DISTANCES_TRACK = pd.DataFrame()
 
-handColsLeft = [5,7,9]
-handColsRight = [6,8,10]
+_selectColsLeft = []
+_selectColsRight = []
 
+colsLeft = [[CKN["left_shoulder"], CKN["left_elbow"], CKN["left_wrist"]],
+            [CKN["nose"],CKN["left_shoulder"], CKN["left_wrist"]],
+            [CKN["nose"],CKN["left_shoulder"], CKN["left_hip"]],
+            [CKN["left_shoulder"],CKN["left_hip"], CKN["left_knee"]]
+            ]
+
+colsRight = [[CKN["right_shoulder"], CKN["right_elbow"], CKN["right_wrist"]],
+            [CKN["nose"],CKN["right_shoulder"], CKN["right_wrist"]],
+            [CKN["nose"],CKN["right_shoulder"], CKN["right_hip"]],
+            [CKN["right_shoulder"],CKN["right_hip"], CKN["right_knee"]]
+            ]
 
 def set_max_frames():
     folders = os.listdir() 
@@ -58,7 +71,6 @@ def set_max_frames():
 
 def add_comma(match):
     return match.group(0) + ','
-
 
 #Divide by maximum value
 def normalize(save_value):
@@ -85,15 +97,15 @@ def distance_between(handData,pos):
         "left":[],
         "right":[]
     }
-    combinations={"left":[handColsLeft[:2],handColsLeft[1:]], 
-                "right":[handColsRight[:2],handColsRight[1:]]}
+    combinations={"left":[_selectColsLeft[:2],_selectColsLeft[1:]], 
+                "right":[_selectColsRight[:2],_selectColsRight[1:]]}
     for key,val in combinations.items():
         for limbIndex in val:
             xa,xb = handData[key]["x"][[str(no) + '_x' for no in limbIndex]].iloc[pos].values
             ya,yb = handData[key]["y"][[str(no) + '_y' for no in limbIndex]].iloc[pos].values
             distBetween = calc_dist(xa,ya,xb,yb)
             dists[key].append(distBetween)
-    print(dists)
+    # print(dists)
     return dists["left"], dists["right"]
 
 
@@ -172,12 +184,14 @@ if __name__=='__main__':
         os.remove(os.path.join(path, save_file_name))
 
     print('Generating file and calculating distance of each keypoint')
-    save_value = pd.DataFrame(columns=['personID', 'keypoint', 'distance'])
 
-    personAngles = {"personID":[], "thetaL":[], "thetaR":[], "theta":[],
-                    "distL":[],"distR":[],"dist":[]}
+    # save_value = pd.DataFrame(columns=['personID', 'keypoint', 'distance'])
 
+    personAngles = {"personID":[]}
+
+    
     for person in glob.glob("*.csv"):
+        saveDF= pd.DataFrame()
         personID = int(person.strip(".csv"))
 
         print(personID)
@@ -192,74 +206,83 @@ if __name__=='__main__':
         #Store the frame numbers in this
         frames = list(df.frame)
         frames = [frame / FRAME_DIVIDER for frame in frames]
+
+        personAngles["personID"].append(personID)
         for _, row in tqdm.tqdm(df.iterrows()):        
-            # print((row[1]))
             pp = row['pose_preds']
-            # print("pp is here")
             if pp==0 or pp=='0':
                 continue
             pp = eval(pp)
             pp = np.array(pp)
-            # print(pp.shape)
             pp = np.take(pp, [0,1], axis=1)
             pp = pp.flatten()
             calc_df.loc[len(calc_df)] = pp
 
+        # Filter data for each iteration
+        for i in range(len(colsLeft)):
+            _selectColsLeft = colsLeft[i]
+            _selectColsRight = colsRight[i]
 
-        handData = {"left" : {
-            "x" : calc_df[ [str(col) + '_x' for col in handColsLeft]],
-            "y" : calc_df[ [str(col) + '_y' for col in handColsLeft]]
-        },
+            handData = {"left" : {
+                "x" : calc_df[ [str(col) + '_x' for col in _selectColsLeft]],
+                "y" : calc_df[ [str(col) + '_y' for col in _selectColsLeft]]
+            },
 
-        "right": {
-            "x":calc_df[[str(col) + '_x' for col in handColsRight]],
-            "y":calc_df[[str(col) + '_y' for col in handColsRight]]}
-        }
+            "right": {
+                "x":calc_df[[str(col) + '_x' for col in _selectColsRight]],
+                "y":calc_df[[str(col) + '_y' for col in _selectColsRight]]}
+            }
 
-        # angleLs,angleRs, nframes = get_angle(frames, handData)
-        # distLs, distRs, nframes = get_euclidean(frames, handData)
+            # angleLs and angleRs are lists now where they store
+            # a list of angles defined for each side
+            angleL,angleR, distL, distR, nframe = get_measures(frames, handData)
 
-        
-        print(frames)
-        
-        angleLs,angleRs, distLs, distRs, nframes = get_measures(frames, handData)
+            if "thetaL" + str(i) not in personAngles.keys():
+                personAngles["thetaL" + str(i)] = list()   
+                personAngles["thetaR"+ str(i)] =  list()
+                personAngles["distL"+ str(i)] = list()
+                personAngles["distR"+ str(i)] = list()
+            
+            # Sum of theta and distance per person
+            personAngles["thetaL" + str(i)].append(np.sum(angleL)/nframe)
+            personAngles["thetaR"+ str(i)].append(np.sum(angleR)/nframe)
+            personAngles["distL"+ str(i)].append(np.sum(distL)/nframe)
+            personAngles["distR"+ str(i)].append(np.sum(distR)/nframe)
+            
+            # history of angles and distances per person
+            saveDF["thetaL" + str(i)] = angleL
+            saveDF["thetaR"+ str(i)] = angleR
+            saveDF["distL"+ str(i)] = distL
+            saveDF["distR"+ str(i)] = distR
 
-        # print(angleL,angleR)
-        personAngles["personID"].append(personID)
-
-        personAngles["thetaL"].append(np.sum(angleLs)/nframes)
-        personAngles["thetaR"].append(np.sum(angleRs)/nframes)
-        
-        personAngles["distL"].append(np.sum(distLs)/nframes)
-        personAngles["distR"].append(np.sum(distRs)/nframes)
-        
-        personAngles["theta"] = list(np.array(personAngles["thetaR"]) + np.array(personAngles["thetaL"])) 
-        personAngles["dist"] = list(np.array(personAngles["distR"]) + np.array(personAngles["distL"])) 
-        
-
+        personAngles["theta"] = list(np.sum([value for key,value in personAngles.items() if key[:-2]=="theta"],axis=0))
+        personAngles["dist"] = list(np.sum([value for key,value in personAngles.items() if key[:-2]=="dist"],axis=0)) 
 
         if not os.path.isdir('angles'):
             os.mkdir('angles')
 
-
-        nose_x = calc_df["0_x"].values[:len(angleLs)]
-        nose_y = calc_df["0_y"].values[:len(angleLs)]
+        saveDF["nose_x"] = calc_df["0_x"].values[:len(angleL)]
+        saveDF["nose_y"] = calc_df["0_y"].values[:len(angleL)]
+        saveDF.to_csv("angles/" + str(personID) + 'a' + '.csv') 
+               #For indivisual person
+        # saveDF = pd.DataFrame(np.hstack((angleLs.reshape(-1,1),
+        #                         angleRs.reshape(-1,1),
+        #                         distLs.reshape(-1,1),
+        #                         distRs.reshape(-1,1)
+        #                         )),
+        #                         columns=["thetaL", 
+        #                                 "thetaR", 
+        #                                 "distL",
+        #                                 "distR",
+        #                                  "nose_x", 
+        #                                  "nose_y"])
         
-        pd.DataFrame(np.hstack((angleLs.reshape(-1,1),
-                                angleRs.reshape(-1,1),
-                                angleRs.reshape(-1,1) + angleLs.reshape(-1,1),
-                                distLs.reshape(-1,1),
-                                distRs.reshape(-1,1),
-                                distLs.reshape(-1,1) + distRs.reshape(-1,1) ,
-                                nose_x.reshape(-1,1),
-                                nose_y.reshape(-1,1)
-                                )),
-                                columns=["thetaL", "thetaR", "theta",
-                                "distL","distR","dist", "nose_x", "nose_y"]).to_csv(
-                                    "angles/" + str(personID) + 'a' + '.csv')
-        
-        # if not os.path.isdir('anglesTrack'):
-        #     os.mkdir('anglesTrack')
+        # angleRs.reshape(-1,1) + angleLs.reshape(-1,1),
+        #                         distLs.reshape(-1,1) + distRs.reshape(-1,1),
+        #                         nose_x.reshape(-1,1),
+        #                         nose_y.reshape(-1,1)
 
-# .detach().cpu().numpy()
+        # Individual persons dataframe
+
+    #This is the final dataframe to be saved
     pd.DataFrame.from_dict(personAngles).to_csv("angles/personAngles.csv")
