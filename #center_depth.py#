@@ -33,8 +33,8 @@ from detection import DetectionSetupMode, compareData, Person
 
 def load_midas():
 
-    model_type = "DPT_Large"  # MiDaS v3 - Large     (highest accuracy, slowest inference speed)
-    #model_type = "DPT_Hybrid"  # MiDaS v3 - Hybrid    (medium accuracy, medium inference speed)
+    #model_type = "DPT_Large"  # MiDaS v3 - Large     (highest accuracy, slowest inference speed)
+    model_type = "DPT_Hybrid"  # MiDaS v3 - Hybrid    (medium accuracy, medium inference speed)
     #model_type = "MiDaS_small"  # MiDaS v2.1 - Small   (lowest accuracy, highest inference speed)
 
     midas = torch.hub.load("intel-isl/MiDaS", model_type)
@@ -81,28 +81,7 @@ print('model loaded!')
 Function for adding arguments through argparse
 '''
 
-##############Loading MIDAS
-model_type = "DPT_Large"  # MiDaS v3 - Large     (highest accuracy, slowest inference speed)
-#model_type = "DPT_Hybrid"  # MiDaS v3 - Hybrid    (medium accuracy, medium inference speed)
-#model_type = "MiDaS_small"  # MiDaS v2.1 - Small   (lowest accuracy, highest inference speed)
-
-depthModel = torch.hub.load("intel-isl/MiDaS", model_type)
-device = torch.device(
-    "cuda") if torch.cuda.is_available() else torch.device("cpu")
-depthModel.to(device)
-depthModel.eval()
-
-midas_transforms = torch.hub.load("intel-isl/MiDaS", "transforms")
-
-if model_type == "DPT_Large" or model_type == "DPT_Hybrid":
-    depthTransform = midas_transforms.dpt_transform
-else:
-    depthTransform = midas_transforms.small_transform
-
-
-
-
-# depthModel, depthTransform, device = load_midas()
+depthModel, depthTransform, device = load_midas()
 
 
 def str2bool(v):
@@ -226,21 +205,18 @@ while (cap.isOpened()):
     if ret:
         if cnt % frame_rate_divider == 0:
             frame_keypoints, results = get_detections(image_np)
-            
-            input_frame_depth = depthTransform(image_np.squeeze()).to(device)
+            frame_depth = depthTransform(image_np.squeeze()).to(device)
+            frame_depth = depthModel(frame_depth)
 
-            with torch.no_grad():
-                frame_depth_device = depthModel(input_frame_depth)
+            frame_depth = torch.nn.functional.interpolate(
+                frame_depth.unsqueeze(1),
+                size=image_np.squeeze().shape[:2],
+                mode="bicubic",
+                align_corners=False,
+            ).squeeze()
 
-                frame_depth_device = torch.nn.functional.interpolate(
-                    frame_depth_device.unsqueeze(1),
-                    size=image_np.squeeze().shape[:2],
-                    mode="bicubic",
-                    align_corners=False,
-                ).squeeze()
+            frame_depth = frame_depth.detach().cpu().numpy() * 255 / 32
 
-            frame_depth = frame_depth_device.cpu().numpy() * 255 / 32
-            
             depthHeatmap = np.dstack((frame_depth, frame_depth, frame_depth))
             #cv2.cvtColor(frame_depth, cv2.COLOR_GRAY2BGR)
 
@@ -250,15 +226,12 @@ while (cap.isOpened()):
             results = {key: val[0] for key, val in results.items()}
             results["scores"] = results.pop("detection_scores")
             results["keypoints"] = results.pop("detection_keypoints")
-            
-            
             results["keypoints"] = [[[
                 keyXY[0] * frameWidth, keyXY[1] * frameHeight,
-                frame_depth[int(keyXY[1] * frameHeight)-1][int(keyXY[0] * frameWidth)-1], 
-                results["detection_keypoint_scores"][i][j]
-            ] for j,keyXY in enumerate(keyPerson)] for i,keyPerson in enumerate(results["keypoints"])]
+                frame_depth[int(keyXY[1] * frameHeight) -
+                            1][int(keyXY[0] * frameWidth) - 1]
+            ] for keyXY in keyPerson] for keyPerson in results["keypoints"]]
 
-            
             results_copy = results.copy()
             keepIndices = [
                 i for i, score in enumerate(results['scores']) if score > 0.3
@@ -289,8 +262,9 @@ while (cap.isOpened()):
                 # print("BOX")
                 # print(box)
                 # multiply the box coordinates with frame width and height
+
+
                 Y1, X1, Y2, X2 = tuple(box)
-                Y1, X1, Y2, X2 = Y1*frameHeight, X1*frameWidth, Y2*frameHeight, X2*frameWidth
                 frame_copy = frame.copy()
                 frame_copy = frame_copy[math.floor(Y1):math.ceil(Y2),
                                         math.floor(X1):math.ceil(X2)]
@@ -306,14 +280,11 @@ while (cap.isOpened()):
                     #This sets up the csv and directories in the mainPath
                     detector = DetectionSetupMode()
                 else:
-                    print("Going to the detector")
                     detector.classifyDetections(results, cnt)
 
             if args.video_output:
                 output.write(np.squeeze(frame_keypoints).astype(np.uint8))
                 outputDepth.write(np.squeeze(depthHeatmap).astype(np.uint8))
-                
-                # plt.imsave("cnt {}.png".format(cnt), frame_depth.astype(np.uint8))
             print(cnt)
             print('Time elapsed in the video : {} minutes'.format(
                 (cnt / (fps * 60))))

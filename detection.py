@@ -196,7 +196,10 @@ class DetectionSetupMode(compareData):
                         df = df[:-1]
                         df.reset_index(inplace=True, drop=True)
                         df.to_csv(csvPath)
-
+                #
+                # print(imgPath)
+                # print(os.listdir())
+                # print(person.image.shape)
                 cv2.imwrite(imgPath, person.image)
 
                 # Log results in a csv file
@@ -247,7 +250,7 @@ class DetectionSetupMode(compareData):
         bestScore = scoreList[bestIndex]
         bestMatch = compareList[bestIndex]
 
-        if bestScore > 0.55:
+        if bestScore > 0.25:
             return (bestMatch, bestScore)
 
         else:

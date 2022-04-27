@@ -13,3 +13,10 @@ for col in df.columns:
         vals =df.sort_values(by=col, ascending=False)[col].values
         print("score : {}".format(vals))
         print()
+
+
+select = ["left_shoulder","right_shoulder", "left_elbow","right_elbow", "left_wrist"]
+
+df["select"] = df[[select]].sum()
+
+df["all"] = df.sum()

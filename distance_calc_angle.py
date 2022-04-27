@@ -1,4 +1,5 @@
 import re
+from importlib_metadata import DistributionFinder
 
 import pandas as pd
 import numpy as np
@@ -217,27 +218,48 @@ if __name__=='__main__':
 
         # angleLs,angleRs, nframes = get_angle(frames, handData)
         # distLs, distRs, nframes = get_euclidean(frames, handData)
+
+        
         print(frames)
+        
         angleLs,angleRs, distLs, distRs, nframes = get_measures(frames, handData)
 
         # print(angleL,angleR)
         personAngles["personID"].append(personID)
+
         personAngles["thetaL"].append(np.sum(angleLs)/nframes)
         personAngles["thetaR"].append(np.sum(angleRs)/nframes)
-        personAngles["theta"] = list(np.array(personAngles["thetaR"]) + np.array(personAngles["thetaL"])) 
+        
         personAngles["distL"].append(np.sum(distLs)/nframes)
         personAngles["distR"].append(np.sum(distRs)/nframes)
+        
+        personAngles["theta"] = list(np.array(personAngles["thetaR"]) + np.array(personAngles["thetaL"])) 
         personAngles["dist"] = list(np.array(personAngles["distR"]) + np.array(personAngles["distL"])) 
         
+
+
         if not os.path.isdir('angles'):
             os.mkdir('angles')
 
+
+        nose_x = calc_df["0_x"].values[:len(angleLs)]
+        nose_y = calc_df["0_y"].values[:len(angleLs)]
+        
         pd.DataFrame(np.hstack((angleLs.reshape(-1,1),
                                 angleRs.reshape(-1,1),
                                 angleRs.reshape(-1,1) + angleLs.reshape(-1,1),
+                                distLs.reshape(-1,1),
+                                distRs.reshape(-1,1),
+                                distLs.reshape(-1,1) + distRs.reshape(-1,1) ,
+                                nose_x.reshape(-1,1),
+                                nose_y.reshape(-1,1)
                                 )),
-                                columns=["thetaL", "thetaR", "theta"]).to_csv(
+                                columns=["thetaL", "thetaR", "theta",
+                                "distL","distR","dist", "nose_x", "nose_y"]).to_csv(
                                     "angles/" + str(personID) + 'a' + '.csv')
+        
+        # if not os.path.isdir('anglesTrack'):
+        #     os.mkdir('anglesTrack')
 
 # .detach().cpu().numpy()
     pd.DataFrame.from_dict(personAngles).to_csv("angles/personAngles.csv")
