@@ -194,8 +194,8 @@ fps = int(cap.get(cv2.CAP_PROP_FPS))
 frame_rate_divider = int(fps * multiplier)
 
 # change these two to alter the fps of read and write
-frame_rate_divider = 1  # 1  fps
-multiplier = 1 / fps  #1/fps 1
+frame_rate_divider = fps  # 1  fps
+multiplier = 1   #1/fps 1
 
 output = cv2.VideoWriter('huma.avi', codec, int(1 / multiplier), size)
 outputDepth = cv2.VideoWriter('humaDepth.avi', codec, int(1 / multiplier),
@@ -250,8 +250,7 @@ while (cap.isOpened()):
             results = {key: val[0] for key, val in results.items()}
             results["scores"] = results.pop("detection_scores")
             results["keypoints"] = results.pop("detection_keypoints")
-            
-            
+                                  
             results["keypoints"] = [[[
                 keyXY[0] * frameWidth, keyXY[1] * frameHeight,
                 frame_depth[int(keyXY[1] * frameHeight)-1][int(keyXY[0] * frameWidth)-1], 

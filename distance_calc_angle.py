@@ -38,7 +38,7 @@ COCO_KEYPOINT_NAMES =  {v: k for k, v in COCO_KEYPOINT_INDEXES.items()}
 CKN = COCO_KEYPOINT_NAMES
 
 MAX_FRAMES = 0 
-FRAME_DIVIDER = 1
+FRAME_DIVIDER = 29#1
 DISTANCES_TRACK = pd.DataFrame()
 
 _selectColsLeft = []
@@ -97,6 +97,7 @@ def distance_between(handData,pos):
         "left":[],
         "right":[]
     }
+
     combinations={"left":[_selectColsLeft[:2],_selectColsLeft[1:]], 
                 "right":[_selectColsRight[:2],_selectColsRight[1:]]}
     for key,val in combinations.items():
