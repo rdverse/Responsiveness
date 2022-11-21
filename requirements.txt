@@ -64,7 +64,7 @@ six==1.15.0
 tb-nightly==2.4.0a20200729
 tensorboard==1.14.0
 tensorboard-plugin-wit==1.7.0
-tensorflow==1.14.0
+tensorflow==2.9.3
 tensorflow-estimator==1.14.0
 termcolor==1.1.0
 tifffile==2020.7.24
