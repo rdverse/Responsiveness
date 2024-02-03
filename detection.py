@@ -127,8 +127,6 @@ class compareData():
 '''
 Person nodes to store values of each person data
 '''
-
-
 class Person():
     def __init__(self, data, personID):
         self.image = data['images'][personID]

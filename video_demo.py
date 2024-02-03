@@ -23,12 +23,10 @@ COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco_humanpose.h5")
 #physical_devices = tf.config.enxperimental.list_phyiscal_device('GPU')
 #tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
-
 class InferenceConfig(coco.CocoConfig):
     GPU_COUNT = 1
     IMAGES_PER_GPU = 1
     KEYPOINT_MASK_POOL_SIZE = 7
-
 
 inference_config = InferenceConfig()
 
@@ -36,7 +34,6 @@ inference_config = InferenceConfig()
 model = modellib.MaskRCNN(mode="inference",
                           config=inference_config,
                           model_dir=MODEL_DIR)
-
 # Get path to saved weights
 
 model_path = os.path.join(ROOT_DIR, "mask_rcnn_coco_humanpose.h5")
