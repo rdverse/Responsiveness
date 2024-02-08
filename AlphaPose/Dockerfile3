@@ -1,0 +1,67 @@
+# Use an official CUDA runtime as a parent image
+#FROM continuumio/miniconda3
+FROM pytorch/conda-builder:cuda121
+# Set the working directory to /app
+WORKDIR /app
+
+# Change the shell to /bin/bash
+SHELL ["/bin/bash", "-c"]
+
+# Set the PATH and LD_LIBRARY_PATH
+ENV PATH /usr/local/cuda/bin/:$PATH
+ENV LD_LIBRARY_PATH /usr/local/cuda/lib64/:$LD_LIBRARY_PATH
+
+# # Install system dependencies
+# RUN apt-get update && apt-get install -y \
+#     git \
+#     wget \
+#     python3 \
+#     python3-pip \
+#     libyaml-dev \
+#     locales 
+
+
+# # Install additional dependencies for Ubuntu 18.04
+# RUN if grep -q "Ubuntu 18.04" /etc/os-release; then \
+#         apt-get install -y locales; \
+#         locale-gen C.UTF-8; \
+#         export LANG=C.UTF-8; \
+#     fi
+
+# # 4. install
+# # Create a new Cond environment named "alphaposepy"
+# RUN conda create --name alphaposepy python=3.8 --yes
+
+# SHELL ["conda", "run", "-n", "alphapose", "/bin/bash", "-c"]
+
+# # echo which environment is active and python version
+# RUN echo "Environment:" && conda info --envs 
+# RUN echo "Python version:" && python --version
+
+# RUN conda install cython
+
+# # # Set environment variables to simulate activation
+# # ENV PATH="${CONDA_HOME}/envs/alphaposepy/bin:${PATH}"
+# # ENV CONDA_DEFAULT_ENV="alphaposepy"
+# # ENV CONDA_PREFIX_1="${CONDA_HOME}/envs/alphaposepy"
+
+# #RUN echo $(which python) 
+# #RUN conda activate alphaposepy
+
+
+# # Clone the repository
+# RUN git clone -b master --depth=1 https://github.com/MVIG-SJTU/AlphaPose.git /app/AplhaPose
+# WORKDIR /app/AlphaPose
+
+# # Install PyTorch3D within the Conda environment
+# RUN python setup.py build develop
+
+# # 5. Install PyTorch3D (Optional, only for visualization)
+# RUN conda install -c fvcore -c iopath -c conda-forge fvcore iopath
+# RUN conda install -c bottler nvidiacub
+# RUN pip install git+ssh://git@github.com/facebookresearch/pytorch3d.git@stableRUN conda install -c fvcore -c iopath -c conda-forge fvcore iopath
+# RUN conda install -c bottler nvidiacub
+# RUN pip install .
+
+# # Set the working directory back to /app
+# WORKDIR /app

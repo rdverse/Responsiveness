@@ -1,4 +1,5 @@
 __pycache__
+*.pt
 *.MTS
 *.avi
 ds*
@@ -15,3 +16,4 @@ huma.avi
 tf
 keypointPlots
 groupPATH
+experimental
