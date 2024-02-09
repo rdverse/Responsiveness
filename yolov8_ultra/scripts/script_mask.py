@@ -1,5 +1,6 @@
 #edit from terminal
 from ultralytics import YOLO
+import os
 import cv2
 import torch
 import numpy as np
@@ -21,6 +22,43 @@ model = YOLO('yolov8x-seg.pt')  # Load an official Segment model
 names = model.model.names
 print(names)
 
+# function recieves frameno, masks, boxes, track_ids, confs, clss, image-frame
+# it should create a folder if not exists with the name of track_id and save the mask image that is cut from the frame
+# the saved image should be named with the frame number
+# a separate folder to be created to store the json file with the track history
+def save_masks(frame_no, masks, boxes, track_ids, confs, clss, frame):
+    for mask, box, track_id, conf,cls in zip(masks, boxes, track_ids, confs,clss):
+            if int(cls)!=0:
+                continue
+            print(f"mask shape {mask.shape}")
+            print(f"frame shape {frame.shape}")
+            #mask = np.array([cv2.resize(mask, (w,h))])
+            frame_masked = frame.copy()*mask[... , np.newaxis]
+            cv2.imwrite("/sam_box/outputs_huma/frame_masked.png", frame_masked)
+            print(f"frame_masked shape {frame_masked.shape}")
+            # mask = mask[0]
+            # mask = mask.astype(np.uint8)
+            # mask = mask*255
+            # mask = mask.astype(np.uint8)
+            
+            x1, y1, x2, y2 = box.cpu().int().tolist()
+            print(f"box coordinates {x1, y1, x2, y2}")
+            frame_masked = frame_masked[y1:y2, x1:x2,]
+            if not os.path.exists(f"/sam_box/outputs_huma/masks/{track_id}"):
+                os.makedirs(f"/sam_box/outputs_huma/masks/{track_id}")
+            cv2.imwrite(f"/sam_box/outputs_huma/masks/{track_id}/{frame_no}.png", frame_masked)
+            # save the track history in a json file
+            # save the mask image in the folder with the name of track_id
+            # the name of the mask image should be the frame number
+            # the mask image should be cut from the frame using the box coordinates
+            # the mask image should be resized to the original frame size
+            # the mask image should be saved in the folder with the name of track_id
+            # the mask image should be saved with the name of the frame number
+
+
+
+
+
 # Open the video file
 video_path = "/sam_box/inputs_huma/PP_SI_DAY11.MTS"
 cap = cv2.VideoCapture(video_path)
@@ -38,6 +76,7 @@ color_list = colors.pose_palette
 frame_count = 0
 while cap.isOpened():
     success, frame = cap.read()
+    frame_stash = frame.copy()
     frame_count+=1
     print(frame_count)
     if frame_count%29!=0:
@@ -71,7 +110,8 @@ while cap.isOpened():
             
             annotator.masks(masks, color_list[track_ids], im_gpu/255)
 
-            for box, cls, track_id, conf in zip(boxes, clss, track_ids, confs):
+            save_masks(frame_count, masks.cpu().numpy(), boxes, track_ids, confs, clss, frame_stash)
+            for box, cls, track_id, conf, mask in zip(boxes, clss, track_ids, confs, masks.cpu().numpy()):
                 #print(f"class : {cls}")
                 if int(cls)==0:
                     annotator.box_label(box, color=colors(int(cls), True), label=f"(confidence:{conf:.2f}):{names[int(cls)]}:{track_id}")
