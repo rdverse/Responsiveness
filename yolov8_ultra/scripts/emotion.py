@@ -67,11 +67,11 @@ def get_plot():
     ax.set_xlabel("Frame")
     ax.set_ylabel("Happy Score (%)")
     ax.set_ylim([0, 100])
-    line, = ax.plot([], [], label="Happy Score", color="black", linewidth=4)
+    line, = ax.plot([], [], label="Happy Score", color="black", linewidth=1)
     ax.legend()
     return fig, ax, line
 
-person_id = "10"
+person_id = "8"
 
 input_dir_path = os.path.join(dir_path, person_id)    
 faces  = os.listdir(input_dir_path)
@@ -165,7 +165,7 @@ if __name__ == "__main__":
     out.release()
     
     # plot the data with appropriate labels
-    plt.plot(x_data, y_data, label="Happy Score", color="black", linewidth=4)
+    plt.plot(x_data, y_data, label="Happy Score", color="black", linewidth=1)
     plt.title("Happy Score Over Time")
     plt.xlabel("Frame")
     plt.ylabel("Happy Score")
