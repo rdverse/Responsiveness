@@ -1,0 +1,4 @@
+#opencv-contrib-python-headless
+opencv-python-headless
+deepface
+matplotlib

@@ -14,6 +14,15 @@ shutdown-yolov8:
 	docker compose -f docker-compose-yolov8.yaml -p yu down
 
 
+launch-yolov8-mask:
+	@echo "Launching YOLOv8"
+	docker compose -f docker-compose-yolov8.yaml -p yum up
+
+shutdown-yolov8-mask:
+	@echo "Shutting down YOLOv8"
+	docker compose -f docker-compose-yolov8.yaml -p yum down
+
+
 #docker run -it --rm --gpus all -v $(shell pwd):/workspace -w /workspace --name yolov8_ultra yolov8:latest
 
 # docker build -t yolov8_ultra .

@@ -56,11 +56,9 @@ def save_masks(frame_no, masks, boxes, track_ids, confs, clss, frame):
             # the mask image should be saved with the name of the frame number
 
 
-
-
-
 # Open the video file
 video_path = "/sam_box/inputs_huma/PP_SI_DAY11.MTS"
+#video
 cap = cv2.VideoCapture(video_path)
 
 assert cap.isOpened(), "Error reading video file"
