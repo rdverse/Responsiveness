@@ -1,14 +1,15 @@
 FROM ultralytics/ultralytics:latest
 
 #COPY . /usr/src/ultralytics
-WORKDIR /usr/src/ultralytics
+WORKDIR /app
+#/usr/src/ultralytics
 
 RUN apt-get update
 RUN pip install opencv-contrib-python-headless
 RUN pip install opencv-python-headless
 RUN pip install deepface
 RUN pip install matplotlib
-WORKDIR /usr/src/ultralytics/yolov8_scripts
+#WORKDIR /usr/src/ultralytics/yolov8_scripts
 CMD [ "python", "main.py" ]
 
 #docker build -t testultra .
