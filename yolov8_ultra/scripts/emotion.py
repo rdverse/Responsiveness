@@ -8,13 +8,12 @@ import tqdm
 import logging
 # global variables
 # Video input path
-dir_path = "/sam_box/outputs_huma/masks"
-output_dir = f"/sam_box/outputs_huma/masks_video/"
+dir_path = "/sam_box/outputs_huma/masks_frames/PP_SI_DAY10.MOV"
+output_dir = f"/sam_box/outputs_huma/masks_video/PP_SI_DAY10.MOV"
 width = 1280#xmax 
 height = 720#ymax 
 if not os.path.exists(output_dir):
-    os.mkdir(output_dir)
-
+    os.makedirs(output_dir)
 
 def mpl_to_opencv_image(fig):
     """
@@ -75,7 +74,7 @@ def get_plot():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
-    person_ids = ["10", "7", "8", "2"]
+    person_ids = ["1", "2", "5"]
     
     for person_id in person_ids:
         print("\n\n\n\n\n\n")

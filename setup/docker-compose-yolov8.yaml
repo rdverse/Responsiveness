@@ -5,8 +5,13 @@ services:
       context: ../yolov8_ultra
       dockerfile: Dockerfile 
       #container_name: "yolov8"
-  
     volumes:
       - /mnt/g/sam_box:/sam_box
       - ../yolov8_ultra/scripts:/scripts
-      
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

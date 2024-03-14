@@ -7,11 +7,11 @@ SHELL := /bin/bash
 
 launch-yolov8:
 	@echo "Launching YOLOv8"
-	docker compose -f docker-compose-yolov8.yaml -p yu up
+	docker compose -f docker-compose-yolov8.yaml -p yu2 up
 
 shutdown-yolov8:
 	@echo "Shutting down YOLOv8"
-	docker compose -f docker-compose-yolov8.yaml -p yu down
+	docker compose -f docker-compose-yolov8.yaml -p yu2 down
 
 
 launch-yolov8-mask:
@@ -21,7 +21,6 @@ launch-yolov8-mask:
 shutdown-yolov8-mask:
 	@echo "Shutting down YOLOv8"
 	docker compose -f docker-compose-yolov8.yaml -p yum down
-
 
 #docker run -it --rm --gpus all -v $(shell pwd):/workspace -w /workspace --name yolov8_ultra yolov8:latest
 

@@ -6,12 +6,12 @@ WORKDIR /app
 
 RUN apt-get update 
 COPY requirements.txt /app
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 
 WORKDIR /scripts
 #WORKDIR /usr/src/ultralytics/yolov8_script
 
-RUN python emotion.py
+#RUN python emotion.py
 
 ENTRYPOINT ["sleep", "infinity"]
 
