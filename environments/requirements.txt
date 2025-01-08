@@ -24,7 +24,7 @@ ipython==7.16.1
 ipython-genutils==0.2.0
 isort==5.2.1
 jedi==0.17.2
-Keras==2.0.8
+Keras==3.8.0
 Keras-Applications==1.0.8
 Keras-Preprocessing==1.1.2
 kiwisolver==1.2.0
