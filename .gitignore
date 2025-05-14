@@ -5,6 +5,8 @@ __pycache__
 ds*
 chrisPP*
 humanpose.h5
+mask_rcnn_coco_humanpose.h5
+*.h5
 Results
 Results1
 human2.avi
